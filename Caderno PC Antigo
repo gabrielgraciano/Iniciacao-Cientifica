@@ -1,0 +1,230 @@
+---
+title: "HAART tentativa 2"
+author: "Gabriel Graciano"
+date: "2022-10-31"
+output: html_document
+---
+Primeiramente, obtive os dados, que estavam em formato .Rds através do comando readRDS.
+
+```{r}
+dados <- readRDS('aids_a_R.rds')
+
+dados <- dados %>% 
+  mutate(ninternou = as.numeric(ninternou))
+```
+
+Questão 1: Calcule as medidas resumo adequadas às variáveis e apresente os resultados em uma única tabela.
+
+Primeiro, fiz uma tabela dos dados que podem ser separados entre 'Sim' e 'Não':
+
+(Uma outra ideia seria usar a função summary(), mas não sei ainda como montar tabelas utilizando os dados de summary())
+
+```{r}
+qualitativos <- c('sexo', 'haart', 'internou', 'grave', 'modleve', 'desnutri', 'obito')
+library(gtsummary)
+
+dados %>%
+  select(all_of(qualitativos))%>%
+  gtsummary::tbl_summary()
+
+
+
+dados %>%
+  select(-id)%>%
+  gtsummary::tbl_summary(data = .,
+ missing = "no")
+```
+
+Em seguida, fiz uma tabela para os dados quantitativos. Uma observação: não consegui para 'ngrave' e 'ninternou'. Não sei exatamente o porquê, talvez o R esteja tratando como variável qualitativa.
+
+```{r}
+quantitativos <- c('nmodleve', 'ndoenca', 'cd4in', 'cd4ult', 'seguimento', 'cvin', 'cvult') 
+
+dados %>%
+  select(all_of(quantitativos)) %>%
+  gtsummary::tbl_summary(statistic = ~'{mean} ({sd}) {var} {min} {max} {p25} {p50} {p75}')
+
+
+dados %>%
+  select(all_of(quantitativos)) %>%
+  gtsummary::tbl_summary(statistic = ~'{mean} {p25} {p50} {p75}')
+```
+
+```{r}
+
+dados %>%
+  select('ngrave') %>%
+  gtsummary::tbl_summary()
+```
+
+# Comparando o grupo de crianças que usaram HAART como o grupo de crianças que não usaram HAART
+
+2)  Calcule as medidas-resumos adequadas às variáveis por grupo (haart) e apresente os valores em uma única tabela.
+
+Primeiro, gerei as tabelas com dados qualitativos para filtrando pelo uso ou não de HAART.
+
+```{r eval=FALSE, include=FALSE}
+  dados%>%
+    select(qualitativos)%>%
+    gtsummary::tbl_summary(data=.,
+                           by=haart,
+                           missing = "no")
+
+
+```
+
+Em seguida, concatenei ambas as tabelas numa tentativa de facilitar visualização. Não ficou do jeito que esperava por enquanto.
+
+```{r eval=FALSE, include=FALSE}
+library('gtsummary')
+row1 <- tbl_merge(list(t1), tab_spanner = 'haart')
+tbl_stack(list(t1, t2), quiet = TRUE)
+```
+
+Finalmente, repetirei o mesmo processo utilizando os dados quantitativos.
+
+```{r}
+t3 <-
+dados %>%
+  filter(haart == 'Sim')%>%
+  select(quantitativos) %>%
+  gtsummary::tbl_summary(statistic = ~'{mean} ({sd}) {var} {min} {max} {p25}')
+
+t4 <-
+dados %>%
+  filter(haart == 'Não')%>%
+  select(quantitativos) %>%
+  gtsummary::tbl_summary(statistic = ~'{mean} ({sd}) {var} {min} {max} {p25}')
+
+```
+
+Observei que o R não permitiu a análise de 'ninternou' utilizando este script, portanto o deletei da análise.
+
+```{r}
+library('gtsummary')
+tbl_stack(list(t3, t4), quiet = TRUE)
+```
+
+a)  Há indícios de que as variáveis sexo, internou, grave, modleve, desnutri e obito estão associadas ao uso de esquema de antirretroviral HAART(haart)?
+
+Observou-se que haart é utilizado apenas em indíviduos do sexo masculino. Nos casos de internação, obteve-se valores próximos (75% no uso de haart contra 79% sem seu uso). Em grave, as porcentagens foram iguais (52%). Em modleve, o grupo que utilizou haart apresentou 92%, contra 98% do grupo que não utilizou. Em desnutri, 29% dos utilizadores de haart foram positivos, contra 34% dos que não utilizaram. Finalmente, para obito, 12% do grupo haart+ chegou a óbito, contra 40% do grupo haart-.
+
+3) Construa um gráfico para visualizar a distribuição do uso de HAART segundo classificação clinico-laboratorial da doença no final do seguimento.
+
+Para essa resolução, deverei fazer uso das variáveis 'cdcult'. No plano horizotal, separarei a distribuição em 4 grupos, sendo que todos utilizaram HAART: N, A, B e C. No plano vertical, colocarei a frequência absoluta de cada grupo e, assim, poderei analisar e concluir a respeito da eficácia de HAART.
+
+Primeiro, fiz uma análise da distribuição de cdcult para haart+.
+```{r}
+library(dplyr)
+library(gtsummary)
+cdcultm <- 'cdcult'
+t5<- 
+  dados%>%
+  dplyr::filter(haart == 'Sim')%>%
+  select(all_of(cdcultm)) %>%
+  gtsummary::tbl_summary()
+print(t5)
+```
+
+Finalmente, consegui plotar o gráfico:
+
+```{r}
+library(ggplot2)
+dados %>%
+  dplyr::filter(haart == 'Sim')%>%
+  ggplot(aes(cdcult))+
+  geom_bar(aes(y = (..count..)/sum(..count..)))+
+  scale_y_continuous(labels = scales::percent,
+                     limits = c(0, 1)
+                     )+
+  ggtitle('HAART+ por categoria')+
+  xlab('Tipo')+
+  ylab('Contagem')
+
+dados %>%
+  dplyr::filter(haart == 'Não')%>%
+  ggplot(aes(cdcult))+
+  geom_bar(aes(y = (..count..)/sum(..count..)))+
+  scale_y_continuous(labels = scales::percent,
+                     limits = c(0, 1)
+                     )+
+  ggtitle('HAART- por categoria')+
+  xlab('Tipo')+
+  ylab('Contagem')
+
+
+
+
+
+dados %>%
+ na.omit() %>%
+ ggplot(aes(x=cdcult, fill=haart)) +
+ geom_bar( position="fill" ) + #comando que calcula o %
+ labs(title = " ",
+ x="Classificação clínico-laboratorial da doença no final do seguimento",
+ y="Frequência relativa") + #+coord_flip()
+ scale_fill_manual(name="Haart", values=c("red", "blue"),
+ labels=c("Não", "Sim"))
+
+
+
+```
+a) Há indícios de associação entre essas variáveis?
+
+Os indícios mostram que pacientes haart+ apresentam maior distribuição na categoria C da classificação clínica. Houve indício de associação. Indivíduos HAART 
+
+4) Construa um gráfico para visualizar a distribuição do número de internações por uso de HAART.
+
+##fazer boxplot
+
+```{r}
+library(ggplot2)
+dados %>%
+  #dplyr::filter(haart == 'Sim')%>%
+  ggplot(aes(x = internou, fill = haart))+
+  geom_bar( position="fill" )
+
+  geom_bar(aes(y = (..count..)/sum(..count..)))+
+  scale_y_continuous(labels = scales::percent,
+                     limits = c(0, 1)
+  )+
+  geom_bar(fill = rainbow(2))+
+  ggtitle('Internações em HAART+')+
+  labs(y = 'Internou', x = 'Contagem')+
+  theme_minimal()
+
+dados %>%
+  dplyr::filter(haart == 'Não') %>%
+  ggplot(aes(x = internou, fill = internou))+
+  geom_bar(aes(y = (..count..)/sum(..count..)))+
+  scale_y_continuous(labels = scales::percent,
+                     limits = c(0, 1)
+  )+
+  geom_bar(fill = rainbow(2))+
+  ggtitle('Internações em HAART -')+
+  labs(y = 'Internou', x = 'Contagem')+
+  theme_minimal()
+```
+a) Há indícios de diferenças do número de internações entre os grupos (haart)?
+
+Sim, há indícios. Enquanto o grupo haart- possui pouco mais de 75% de internações, o grupo haart + possui aproximadamente 75% de internações.
+
+5) Construa um gráfico para visualizar a distribuição de linfocitos TCD4+ no início do seguimento nos grupos de crianças que usaram ou não HAART.
+
+Pensei, inicialmente, em fazer um gráfico de barras separadas por intervalos numéricos para os valores de cd4in.
+Para tal, seria necessário, eu imagino, a criação de subconjuntos dos valores buscados no intervalo.
+```{r eval=FALSE, include=FALSE}
+library(gtsummary)
+library(ggplot2)
+dados %>%
+  dplyr::filter(haart == 'Sim') %>%
+  ggplot(aes(x = cd4in, fill = cd4in))+
+  geom_bar(aes(y = (..count..)/sum(..count..)))+
+  scale_y_continuous(labels = scales::percent,
+                     limits = c(0, 1)
+  )+
+  geom_bar(fill = rainbow(2))+
+  ggtitle('Internações em HAART+')+
+  labs(y = 'Internou', x = 'Contagem')+
+  theme_minimal()
+```
