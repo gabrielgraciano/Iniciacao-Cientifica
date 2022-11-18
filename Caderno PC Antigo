@@ -29,7 +29,7 @@ dados %>%
 
 
 
-dados %>%
+dados %>
   select(-id)%>%
   gtsummary::tbl_summary(data = .,
  missing = "no")
