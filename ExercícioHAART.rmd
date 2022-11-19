@@ -123,3 +123,27 @@ dados%>%
   geom_boxplot(outlier.shape = NA, notch = T)
 ```
 a) Há diferenças de linfócito TCD4 no início do seguimento dos grupos?
+
+
+7) Construa um gráfico para visualizar a distribuição da carga viral no início e no final do seguimento no grupo de crianças que usaram HAART.
+
+
+```{r}
+g1 <-
+  dados%>%
+  filter(haart == 'Sim')%>%
+  ggplot(aes(x = haart, y = cvin, fill = haart))+
+  scale_y_continuous(limits = c(300, 340))+
+  geom_boxplot()
+
+g2 <-
+  dados%>%
+  filter(haart == 'Sim')%>%
+  ggplot(aes(x = haart, y = cvult, fill = haart))+
+  scale_y_continuous(limits = c(17.5, 22.5))+
+  geom_boxplot()
+
+grid.arrange(g1, g2)
+
+```
+Utilizar pacote gridExtra!
