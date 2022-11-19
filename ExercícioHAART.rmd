@@ -1,8 +1,3 @@
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-library(dplyr)
-```
-
 Primeiro, vamos ler os dados:
 ```{r}
 dados <- readRDS('aids_a_R.rds')
@@ -11,9 +6,13 @@ dados <- readRDS('aids_a_R.rds')
 ```{r}
 dados <- dados %>% 
   mutate(ninternou = as.numeric(ninternou))
-
 ```
 Não funcionou para 'ngrave'.
+
+```{r}
+install.packages('rtools')
+```
+
 
 
 Questão 1: Calcule as medidas resumo adequadas às variáveis e apresente os resultados em uma única tabela.
@@ -24,11 +23,9 @@ Primeiro, fiz uma tabela dos dados que podem ser separados entre 'Sim' e 'Não':
 
 ```{r}
 qualitativos <- c('sexo', 'haart', 'internou', 'grave', 'modleve', 'desnutri', 'obito')
-
 dados %>%
   select(all_of(qualitativos))%>%
   gtsummary::tbl_summary()
-
 ```
 Em seguida, fiz uma tabela para os dados quantitativos. Uma observação: não consegui para 'ngrave'. Não sei exatamente o porquê, talvez o R esteja tratando como variável qualitativa.
 
@@ -36,7 +33,6 @@ Como medidas-resumo, optei por mediana e intervalo interquartilico (p25).
 
 ```{r}
 quantitativos <- c('ninternou', 'nmodleve', 'ndoenca', 'cd4in', 'cd4ult', 'seguimento', 'cvin', 'cvult') 
-
 dados %>%
   select(all_of(quantitativos)) %>%
   gtsummary::tbl_summary(statistic = ~'{median} {p25}')
@@ -69,60 +65,20 @@ Observou-se que haart é utilizado apenas em indíviduos do sexo masculino. Nos 
 
 Para essa resolução, deverei fazer uso das variáveis 'cdcult'. No plano horizotal, separarei a distribuição em 4 grupos, sendo que todos utilizaram HAART: N, A, B e C. No plano vertical, colocarei a frequência absoluta de cada grupo e, assim, poderei analisar e concluir a respeito da eficácia de HAART.
 
-Primeiro, fiz uma análise da distribuição de cdcult para haart+.
-```{r}
-library(dplyr)
-library(gtsummary)
-cdcultm <- 'cdcult'
-t5<- 
-  dados%>%
-  dplyr::filter(haart == 'Sim')%>%
-  select(all_of(cdcultm)) %>%
-  gtsummary::tbl_summary()
-print(t5)
-```
-
-Finalmente, consegui plotar o gráfico:
+Plot do gráfico:
 
 ```{r}
 library(ggplot2)
 dados %>%
-  dplyr::filter(haart == 'Sim')%>%
-  ggplot(aes(cdcult))+
-  geom_bar(aes(y = (..count..)/sum(..count..)))+
-  scale_y_continuous(labels = scales::percent,
-                     limits = c(0, 1)
-                     )+
-  ggtitle('HAART+ por categoria')+
-  xlab('Tipo')+
-  ylab('Contagem')
-
-dados %>%
-  dplyr::filter(haart == 'Não')%>%
-  ggplot(aes(cdcult))+
-  geom_bar(aes(y = (..count..)/sum(..count..)))+
-  scale_y_continuous(labels = scales::percent,
-                     limits = c(0, 1)
-                     )+
-  ggtitle('HAART- por categoria')+
-  xlab('Tipo')+
-  ylab('Contagem')
-
-
-
-
-
-dados %>%
- na.omit() %>%
- ggplot(aes(x=cdcult, fill=haart)) +
- geom_bar( position="fill" ) + #comando que calcula o %
- labs(title = " ",
- x="Classificação clínico-laboratorial da doença no final do seguimento",
- y="Frequência relativa") + #+coord_flip()
- scale_fill_manual(name="Haart", values=c("red", "blue"),
- labels=c("Não", "Sim"))
-
-
+  na.omit()%>%
+  ggplot(aes(x = cdcult, fill = haart))+
+  geom_bar(position = 'fill') +
+  labs(title = '',
+       x = 'Classificação clinico-laboratorial da doença no final do seguimento',
+       y = 'Frequencia relativa') +
+  scale_fill_manual(name = 'Haart', values = c('red', 'blue'),
+                    labels = c('Não', 'Sim'))
+ 
 
 ```
 a) Há indícios de associação entre essas variáveis?
@@ -131,55 +87,39 @@ Os indícios mostram que pacientes haart+ apresentam maior distribuição na cat
 
 4) Construa um gráfico para visualizar a distribuição do número de internações por uso de HAART.
 
-##fazer boxplot
-
+##fazer boxplot (é possível fazer um boxplot?)
 ```{r}
-library(ggplot2)
-dados %>%
-  #dplyr::filter(haart == 'Sim')%>%
+dados%>%
   ggplot(aes(x = internou, fill = haart))+
-  geom_bar( position="fill" )
-
-  geom_bar(aes(y = (..count..)/sum(..count..)))+
-  scale_y_continuous(labels = scales::percent,
-                     limits = c(0, 1)
-  )+
-  geom_bar(fill = rainbow(2))+
-  ggtitle('Internações em HAART+')+
-  labs(y = 'Internou', x = 'Contagem')+
-  theme_minimal()
-
-dados %>%
-  dplyr::filter(haart == 'Não') %>%
-  ggplot(aes(x = internou, fill = internou))+
-  geom_bar(aes(y = (..count..)/sum(..count..)))+
-  scale_y_continuous(labels = scales::percent,
-                     limits = c(0, 1)
-  )+
-  geom_bar(fill = rainbow(2))+
-  ggtitle('Internações em HAART -')+
-  labs(y = 'Internou', x = 'Contagem')+
-  theme_minimal()
+  geom_bar(position = 'fill')+
+  scale_fill_manual(name = 'Haart', values = c('red', 'blue'),
+                    labels = c('Não', 'Sim'))
+  
 ```
+O que aconteceria se eu trocasse haart por internou e vice-versa no código acima? eu troquei e ficou estranho.
+
 a) Há indícios de diferenças do número de internações entre os grupos (haart)?
 
 Sim, há indícios. Enquanto o grupo haart- possui pouco mais de 75% de internações, o grupo haart + possui aproximadamente 75% de internações.
 
 5) Construa um gráfico para visualizar a distribuição de linfocitos TCD4+ no início do seguimento nos grupos de crianças que usaram ou não HAART.
 
-Pensei, inicialmente, em fazer um gráfico de barras separadas por intervalos numéricos para os valores de cd4in.
-Para tal, seria necessário, eu imagino, a criação de subconjuntos dos valores buscados no intervalo.
-```{r eval=FALSE, include=FALSE}
-library(gtsummary)
-library(ggplot2)
-dados %>%
-  dplyr::filter(haart == 'Sim') %>%
-  ggplot(aes(x = cd4in, fill = cd4in))+
-  geom_bar(aes(y = (..count..)/sum(..count..)))+
-  scale_y_continuous(labels = scales::percent,
-                     limits = c(0, 1)
-  )+
-  geom_bar(fill = rainbow(2))+
-  ggtitle('Internações em HAART+')+
-  labs(y = 'Internou', x = 'Contagem')+
-  theme_minimal()
+```{r}
+dados%>%
+  ggplot(aes(x = haart, y = cd4in, fill = haart))+
+  scale_y_continuous(limits = c(0, 2600))+
+  geom_boxplot(outlier.shape = NA, notch = T)
+```
+Para que serve o T notch?
+
+a) Sim, os linfócitos em Haart - apresentam-se em menor quantidade se comparados aos linfócitos em Haart +.
+
+6) Construa um gráfico para visualizar a distribuição de linfócitos TCD4+ no final do seguimento nos grupos de crianças que usaram ou não HAART.
+
+```{r}
+dados%>%
+  ggplot(aes(x = haart, y = cd4ult, fill = haart))+
+  scale_y_continuous(limits = c(0, 2000))+
+  geom_boxplot(outlier.shape = NA, notch = T)
+```
+a) Há diferenças de linfócito TCD4 no início do seguimento dos grupos?
