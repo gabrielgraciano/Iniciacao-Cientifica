@@ -1,3 +1,8 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+```
+
 Primeiro, vamos ler os dados:
 ```{r}
 dados <- readRDS('aids_a_R.rds')
@@ -79,7 +84,6 @@ dados %>%
   scale_fill_manual(name = 'Haart', values = c('red', 'blue'),
                     labels = c('Não', 'Sim'))
  
-
 ```
 a) Há indícios de associação entre essas variáveis?
 
@@ -119,14 +123,13 @@ a) Sim, os linfócitos em Haart - apresentam-se em menor quantidade se comparado
 ```{r}
 dados%>%
   ggplot(aes(x = haart, y = cd4ult, fill = haart))+
-  scale_y_continuous(limits = c(0, 2000))+
+   scale_y_continuous(limits = c(0, 2000))+
   geom_boxplot(outlier.shape = NA, notch = T)
 ```
 a) Há diferenças de linfócito TCD4 no início do seguimento dos grupos?
+Sim. Ambos os grupos apresentaram contagens menores de linfocitos TCD4 se comparados ao inicido do seguimento.
 
-
-7) Construa um gráfico para visualizar a distribuição da carga viral no início e no final do seguimento no grupo de crianças que usaram HAART.
-
+7) Construa um gráfico para visualizar a distribuição da carga viral no inicio e no final do seguimento no grupo de crianças que usaram HAART.
 
 ```{r}
 g1 <-
@@ -135,15 +138,62 @@ g1 <-
   ggplot(aes(x = haart, y = cvin, fill = haart))+
   scale_y_continuous(limits = c(300, 340))+
   geom_boxplot()
-
 g2 <-
   dados%>%
   filter(haart == 'Sim')%>%
   ggplot(aes(x = haart, y = cvult, fill = haart))+
   scale_y_continuous(limits = c(17.5, 22.5))+
   geom_boxplot()
-
 grid.arrange(g1, g2)
-
 ```
-Utilizar pacote gridExtra!
+
+a) Há indicios de diferenças de carga viral no inicio e no final do seguimento?
+Sim, ao final do seguimento a carga viral é consideravelmente menor.
+
+8) Construa um gráfico para visualizar a distribuição da carga viral no inicio e no final do seguimento no grupo de crianças que usaram HAART.
+
+```{r}
+g3 <-
+  dados%>%
+  filter(haart == 'Não')%>%
+  ggplot(aes(x = haart, y = cvin, fill = haart))+
+  scale_y_continuous(limits = c(300, 340))+
+  geom_boxplot()
+g4 <-
+  dados%>%
+  filter(haart == 'Não')%>%
+  ggplot(aes(x = haart, y = cvult, fill = haart))+
+  scale_y_continuous(limits = c(40, 60))+
+  geom_boxplot()
+grid.arrange(g3, g4)
+```
+
+a) Há indicios de diferenças de carga viral no inicio e no final do seguimento?
+Sim, ao final do seguimento a carga viral é consideravelmente menor.
+
+9) Construa um gráfico para visualizar a relação entre os valores de TCD4+ e carga viral no inicio do seguimento no grupo de crianças que usaram haart.
+
+```{r}
+dados%>%
+  filter(haart == 'Sim')%>%
+  ggplot(aes(x = cd4in, y = cvin))+
+  geom_point()+
+  theme_minimal()
+```
+a) Há indícios de correlação entre as variáveis no grupo de crianças que usaram HAART?
+Aparentemente, não há ocorrência de carga viral alta quando se tem valores maiores de cd4+.
+
+10) Construa um gráfico para visualizar a relação entre os valores de TCD4+ e carga viral no inicio do seguimento no grupo de crianças que não usaram haart.
+
+```{r}
+dados%>%
+  filter(haart == 'Não')%>%
+  ggplot(aes(x = cd4in, y = cvin))+
+  geom_point()+
+  theme_minimal()
+```
+a) Há indícios de correlação entre as variáveis no grupo de crianças que não usaram HAART?
+Observa-se que quanto menor a contagem de cd4in, maior é a presença viral.
+
+11) Com base nos objetivos, faça um resumo dos resultados.
+O objetivo era comparar dois grupos de crianças: haart + e haart -. Observou-se que o medicamento é eficiente na amenização das consequências do HIV. Um único ponto que me chamou a atenção foi a divisão por sexo: enquanto feminino utilizou haart, masculino não.
