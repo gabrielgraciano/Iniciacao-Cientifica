@@ -1,3 +1,9 @@
+---
+title: "HAART tentativa 2"
+author: "Gabriel Graciano"
+date: "2022-10-31"
+output: html_document
+---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(dplyr)
@@ -10,15 +16,10 @@ dados <- readRDS('aids_a_R.rds')
 
 ```{r}
 dados <- dados %>% 
-  mutate(ninternou = as.numeric(ninternou))
+  mutate(ninternou = as.numeric(ninternou),
+         ngrave = as.numeric(ngrave))
 ```
 Não funcionou para 'ngrave'.
-
-```{r}
-install.packages('rtools')
-```
-
-
 
 Questão 1: Calcule as medidas resumo adequadas às variáveis e apresente os resultados em uma única tabela.
 
@@ -37,7 +38,7 @@ Em seguida, fiz uma tabela para os dados quantitativos. Uma observação: não c
 Como medidas-resumo, optei por mediana e intervalo interquartilico (p25). 
 
 ```{r}
-quantitativos <- c('ninternou', 'nmodleve', 'ndoenca', 'cd4in', 'cd4ult', 'seguimento', 'cvin', 'cvult') 
+quantitativos <- c('ninternou', 'ngrave', 'nmodleve', 'ndoenca', 'cd4in', 'cd4ult', 'seguimento', 'cvin', 'cvult') 
 dados %>%
   select(all_of(quantitativos)) %>%
   gtsummary::tbl_summary(statistic = ~'{median} {p25}')
@@ -50,6 +51,7 @@ dados %>%
 Gerei tabelas separadas para qualitativos e para quantitativos.
 
 ```{r}
+library(vtable)
   dados%>%
   st(qualitativos, group = c('haart'))
 ```
@@ -58,8 +60,9 @@ Gerei tabelas separadas para qualitativos e para quantitativos.
 dados%>%
   st(quantitativos,
      summ=c('median(x)',
-            'pctile(x)[25]'),
-     summ.names = c('Mediana', 'p25'),
+            'pctile(x)[25]',
+            'pctile(x)[75]'),
+     summ.names = c('Mediana', 'p25', 'p75'),
      group = c('haart'))
 ```
 a)  Há indícios de que as variáveis sexo, internou, grave, modleve, desnutri e obito estão associadas ao uso de esquema de antirretroviral HAART(haart)?
@@ -84,6 +87,7 @@ dados %>%
   scale_fill_manual(name = 'Haart', values = c('red', 'blue'),
                     labels = c('Não', 'Sim'))
  
+
 ```
 a) Há indícios de associação entre essas variáveis?
 
@@ -91,7 +95,6 @@ Os indícios mostram que pacientes haart+ apresentam maior distribuição na cat
 
 4) Construa um gráfico para visualizar a distribuição do número de internações por uso de HAART.
 
-##fazer boxplot (é possível fazer um boxplot?)
 ```{r}
 dados%>%
   ggplot(aes(x = internou, fill = haart))+
@@ -112,9 +115,8 @@ Sim, há indícios. Enquanto o grupo haart- possui pouco mais de 75% de interna�
 dados%>%
   ggplot(aes(x = haart, y = cd4in, fill = haart))+
   scale_y_continuous(limits = c(0, 2600))+
-  geom_boxplot(outlier.shape = NA, notch = T)
+  geom_boxplot(outlier.shape = NA)
 ```
-Para que serve o T notch?
 
 a) Sim, os linfócitos em Haart - apresentam-se em menor quantidade se comparados aos linfócitos em Haart +.
 
@@ -123,49 +125,71 @@ a) Sim, os linfócitos em Haart - apresentam-se em menor quantidade se comparado
 ```{r}
 dados%>%
   ggplot(aes(x = haart, y = cd4ult, fill = haart))+
-   scale_y_continuous(limits = c(0, 2000))+
-  geom_boxplot(outlier.shape = NA, notch = T)
+  scale_y_continuous(limits = c(0, 2000))+
+  geom_boxplot(outlier.shape = NA)
 ```
 a) Há diferenças de linfócito TCD4 no início do seguimento dos grupos?
-Sim. Ambos os grupos apresentaram contagens menores de linfocitos TCD4 se comparados ao inicido do seguimento.
 
-7) Construa um gráfico para visualizar a distribuição da carga viral no inicio e no final do seguimento no grupo de crianças que usaram HAART.
+7) Construa um gráfico para visualizar a distribuição da carga viral no início e no final do seguimento no grupo de crianças que usaram HAART.
+
+Fiz utilizando dois métodos: gather e grid.arrange. Aparentemente gather deixa mais agradável. Fiz anotação de escala para poder visualizar ambos os plots e compará-los.
+
+```{r}
+dados %>%
+  gather("cv", "Valor", 18:19)%>%
+  filter(haart == "Sim")%>%
+  ggplot(aes(x = cv , y = value, fill = cv))+
+  scale_y_continuous(limits = c(0, 500))+
+  geom_boxplot()
+
+  
+```
 
 ```{r}
 g1 <-
   dados%>%
   filter(haart == 'Sim')%>%
   ggplot(aes(x = haart, y = cvin, fill = haart))+
-  scale_y_continuous(limits = c(300, 340))+
+  scale_y_continuous(limits = c(0, 500))+
   geom_boxplot()
+
 g2 <-
   dados%>%
   filter(haart == 'Sim')%>%
   ggplot(aes(x = haart, y = cvult, fill = haart))+
-  scale_y_continuous(limits = c(17.5, 22.5))+
+  scale_y_continuous(limits = c(0, 500))+
   geom_boxplot()
-grid.arrange(g1, g2)
+
+grid.arrange(g1, g2, ncol=2)
+
 ```
 
-a) Há indicios de diferenças de carga viral no inicio e no final do seguimento?
-Sim, ao final do seguimento a carga viral é consideravelmente menor.
-
 8) Construa um gráfico para visualizar a distribuição da carga viral no inicio e no final do seguimento no grupo de crianças que usaram HAART.
+
+```{r}
+dados %>%
+  gather("cv", "value", 18:19)%>%
+  filter(haart == 'Não')%>%
+  ggplot(aes(x = cv, y = value, fill = cv))+
+  scale_y_continuous(limits = c(0, 400))+
+  labs(title = "Carga Viral", fill = "carga viral", x = "Carga Viral", y = "Valor")+
+  geom_boxplot()
+```
 
 ```{r}
 g3 <-
   dados%>%
   filter(haart == 'Não')%>%
   ggplot(aes(x = haart, y = cvin, fill = haart))+
-  scale_y_continuous(limits = c(300, 340))+
+  scale_y_continuous(limits = c(0, 400))+
   geom_boxplot()
 g4 <-
   dados%>%
   filter(haart == 'Não')%>%
   ggplot(aes(x = haart, y = cvult, fill = haart))+
-  scale_y_continuous(limits = c(40, 60))+
+  scale_y_continuous(limits = c(0, 400))+
   geom_boxplot()
-grid.arrange(g3, g4)
+grid.arrange(g3, g4, ncol = 2)
 ```
 
 a) Há indicios de diferenças de carga viral no inicio e no final do seguimento?
@@ -195,5 +219,3 @@ dados%>%
 a) Há indícios de correlação entre as variáveis no grupo de crianças que não usaram HAART?
 Observa-se que quanto menor a contagem de cd4in, maior é a presença viral.
 
-11) Com base nos objetivos, faça um resumo dos resultados.
-O objetivo era comparar dois grupos de crianças: haart + e haart -. Observou-se que o medicamento é eficiente na amenização das consequências do HIV. Um único ponto que me chamou a atenção foi a divisão por sexo: enquanto feminino utilizou haart, masculino não.
