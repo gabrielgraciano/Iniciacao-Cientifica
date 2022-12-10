@@ -1,19 +1,4 @@
-library(shiny)
 
-shinyUI(fluidPage(
-  
-  titlePanel(),
-  sidebarLayout(
-    sidebarPanel(),
-    mainPanel()
-    
-  )
-)
-
-)
-```
-
-```{r}
 library(shiny)
 
 ui <- fluidPage(
