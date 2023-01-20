@@ -1,22 +1,27 @@
 library(shiny)
 
 ui <- fluidPage(
-  titlePanel("Demonstration of the selectInput UI widget in shiny"),
+  titlePanel("Demonstração de selectUI widget"),
   sidebarLayout(
     sidebarPanel(
-    selectInput("statenames", "Select the state", c("California", "Florida", "Texas", "New York", "Arizona"),
-                selected = "Texas", selectize = TRUE, multiple = TRUE)
+      selectInput("state", "Selecione um estado",
+                  c("São Paulo", "Rio de Janeiro","Paraná", "Amazonas", "Pará"), 
+                  selected = "Pará", multiple = TRUE)
     ),
     mainPanel(
-      textOutput("state")
+      paste("Você selecionou:"),
+      textOutput("estado")
     )
-    
-  ))
-
-#Multiple = TRUE nos permite escolher mais de uma opção
+  )
+  )
 
 server <- function(input, output){
-  output$state <- renderText(input$statenames)
+  
+  
+  output$estado <- renderText(input$state[1:length(input$state)])
+          
+          
+  
 }
 
 shinyApp(ui, server)
